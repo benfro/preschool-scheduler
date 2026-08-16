@@ -7,17 +7,17 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-import net.benfro.presched.application.ScheduleRequest;
-import net.benfro.presched.application.ScheduleResult;
-import net.benfro.presched.application.port.in.CalculateScheduleUseCase;
+import net.benfro.scheduler.application.ScheduleRequest;
+import net.benfro.scheduler.application.ScheduleResult;
+import net.benfro.scheduler.application.port.in.CalculateScheduleUseCase;
 
 /**
  * Driving adapter: the REST seam the ports-and-adapters refactor was built for.
- * Structurally identical to {@link net.benfro.presched.adapter.in.cli.ScheduleDemoCli} -
+ * Structurally identical to {@link net.benfro.scheduler.adapter.in.cli.ScheduleDemoCli} -
  * take a request, call {@link CalculateScheduleUseCase}, hand back the result - just over
  * HTTP/JSON instead of an ANSI console grid. Neither
- * {@link net.benfro.presched.application.ScheduleCalculationService} nor
- * {@link net.benfro.presched.adapter.out.timefold.TimefoldSolveScheduleAdapter} needed to
+ * {@link net.benfro.scheduler.application.ScheduleCalculationService} nor
+ * {@link net.benfro.scheduler.adapter.out.timefold.TimefoldSolveScheduleAdapter} needed to
  * change one line for this endpoint to exist.
  *
  * <p>Lives in {@code net.benfro.rest}, a sibling package to {@code net.benfro.presched}
