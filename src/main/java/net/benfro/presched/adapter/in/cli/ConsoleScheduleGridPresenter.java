@@ -87,30 +87,34 @@ final class ConsoleScheduleGridPresenter {
                 .findFirst().orElse(null);
     }
 
+    /**
+     * Exhaustive over every {@link SlotActivity} variant (plus {@code null}, for a grid
+     * cell with no matching {@link TeacherSlot}) rather than falling through to a default
+     * - adding a 5th variant is a compile error here, not a silent mis-render.
+     */
     private static String shortCode(SlotActivity activity) {
-        if (activity == null || activity instanceof SlotActivity.OffDuty) {
+        if (activity == null) {
             return ".";
         }
-        if (activity instanceof SlotActivity.Teaching) {
-            return "T";
-        }
-        if (activity instanceof SlotActivity.Break) {
-            return "Br";
-        }
-        return "Pl";
+        return switch (activity) {
+            case SlotActivity.OffDuty _ -> ".";
+            case SlotActivity.Teaching _ -> "T";
+            case SlotActivity.Break _ -> "Br";
+            case SlotActivity.PlanningTime _ -> "Pl";
+        };
     }
 
+    /** Exhaustive for the same reason as {@link #shortCode} - see its javadoc. */
     private static String ansiColor(SlotActivity activity) {
-        if (activity == null || activity instanceof SlotActivity.OffDuty) {
+        if (activity == null) {
             return ANSI_DIM;
         }
-        if (activity instanceof SlotActivity.Teaching) {
-            return ANSI_GREEN;
-        }
-        if (activity instanceof SlotActivity.Break) {
-            return ANSI_YELLOW;
-        }
-        return ANSI_CYAN;
+        return switch (activity) {
+            case SlotActivity.OffDuty _ -> ANSI_DIM;
+            case SlotActivity.Teaching _ -> ANSI_GREEN;
+            case SlotActivity.Break _ -> ANSI_YELLOW;
+            case SlotActivity.PlanningTime _ -> ANSI_CYAN;
+        };
     }
 
     /** The grids above drop the per-cell coverage column, so verify it here instead and report any gaps. */
