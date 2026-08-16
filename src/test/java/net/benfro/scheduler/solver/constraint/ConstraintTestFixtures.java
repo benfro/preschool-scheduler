@@ -3,6 +3,7 @@ package net.benfro.scheduler.solver.constraint;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +18,7 @@ import net.benfro.scheduler.solver.ScheduleGenerator;
 /** Scenario-building helpers shared by every {@code *ConstraintsTest} in this package. */
 final class ConstraintTestFixtures {
 
-    static final LocalDate DATE = LocalDate.of(2026, 8, 17).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+    static final LocalDate DATE = LocalDate.of(2026, Month.AUGUST, 17).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
 
     private ConstraintTestFixtures() {
     }

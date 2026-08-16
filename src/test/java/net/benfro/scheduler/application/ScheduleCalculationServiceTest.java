@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +31,7 @@ import net.benfro.scheduler.solver.ScheduleGenerator;
  */
 class ScheduleCalculationServiceTest {
 
-    private static final LocalDate DATE = LocalDate.of(2026, 8, 17); // a Monday
+    private static final LocalDate DATE = LocalDate.of(2026, Month.AUGUST, 17); // a Monday
 
     @Test
     void buildsAnUnsolvedProblemMatchingTheRequest() {

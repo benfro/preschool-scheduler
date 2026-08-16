@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -19,7 +20,7 @@ import net.benfro.scheduler.domain.TimeSlot;
 
 class ScheduleGeneratorTest {
 
-    private static final LocalDate DATE = LocalDate.of(2026, 8, 17);
+    private static final LocalDate DATE = LocalDate.of(2026, Month.AUGUST, 17);
 
     @Test
     void dailySlotsSpanOpeningHoursInHalfHourBlocks() {

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +34,7 @@ class SolveSmokeTest {
 
     @Test
     void trivialProblemReachesAFeasibleSolution() {
-        LocalDate date = LocalDate.of(2026, 8, 17);
+        LocalDate date = LocalDate.of(2026, Month.AUGUST, 17);
         Pupil pupil = new Pupil(new ArrayList<>());
         pupil.addStayingTime(new TimeSlot(date, LocalTime.of(9, 0), LocalTime.of(11, 0)));
         Group group = new Group("TestGroup", new ArrayList<>());
