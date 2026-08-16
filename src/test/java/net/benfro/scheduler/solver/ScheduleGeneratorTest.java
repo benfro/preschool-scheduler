@@ -27,8 +27,8 @@ class ScheduleGeneratorTest {
         List<TimeSlot> slots = ScheduleGenerator.dailySlots(DATE);
 
         assertEquals(21, slots.size());
-        assertEquals(new TimeSlot(DATE, LocalTime.of(7, 0), LocalTime.of(7, 30)), slots.get(0));
-        assertEquals(new TimeSlot(DATE, LocalTime.of(17, 0), LocalTime.of(17, 30)), slots.get(slots.size() - 1));
+        assertEquals(new TimeSlot(DATE, LocalTime.of(7, 0), LocalTime.of(7, 30)), slots.getFirst());
+        assertEquals(new TimeSlot(DATE, LocalTime.of(17, 0), LocalTime.of(17, 30)), slots.getLast());
     }
 
     @Test
@@ -64,8 +64,8 @@ class ScheduleGeneratorTest {
         List<CoverageRequirement> requirements = ScheduleGenerator.coverageRequirements(group, DATE);
 
         assertEquals(6, requirements.size());
-        assertEquals(new TimeSlot(DATE, LocalTime.of(9, 0), LocalTime.of(9, 30)), requirements.get(0).slot());
-        assertEquals(new TimeSlot(DATE, LocalTime.of(11, 30), LocalTime.of(12, 0)), requirements.get(requirements.size() - 1).slot());
+        assertEquals(new TimeSlot(DATE, LocalTime.of(9, 0), LocalTime.of(9, 30)), requirements.getFirst().slot());
+        assertEquals(new TimeSlot(DATE, LocalTime.of(11, 30), LocalTime.of(12, 0)), requirements.getLast().slot());
         requirements.forEach(requirement -> assertEquals(group, requirement.group()));
     }
 
@@ -79,7 +79,7 @@ class ScheduleGeneratorTest {
         List<CoverageRequirement> requirements = ScheduleGenerator.coverageRequirements(group, DATE);
 
         assertEquals(2, requirements.size());
-        assertEquals(LocalTime.of(7, 0), requirements.get(0).slot().start());
+        assertEquals(LocalTime.of(7, 0), requirements.getFirst().slot().start());
     }
 
     @Test

@@ -35,7 +35,7 @@ public final class ScheduleDemoCli {
 
         System.out.println("Group '" + request.group().name() + "': " + PUPIL_COUNT + " pupils, " + request.teachers().size()
                 + " teachers (" + request.teachers().stream().map(Teacher::name).collect(Collectors.joining(", "))
-                + "), week of " + request.week().get(0) + " to " + request.week().get(request.week().size() - 1));
+                + "), week of " + request.week().getFirst() + " to " + request.week().getLast());
         System.out.println("Solving...");
 
         CalculateScheduleUseCase calculateSchedule = new ScheduleCalculationService(new TimefoldSolveScheduleAdapter());

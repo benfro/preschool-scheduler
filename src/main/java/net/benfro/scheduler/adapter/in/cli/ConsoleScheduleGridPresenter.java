@@ -56,7 +56,7 @@ final class ConsoleScheduleGridPresenter {
 
     /** One grid per teacher: days across (X-axis), 30-minute slots down (Y-axis). */
     private static void printWeekGrids(List<Teacher> teachers, List<LocalDate> week, List<TeacherSlot> allSlots) {
-        List<TimeSlot> gridSlots = ScheduleGenerator.dailySlots(week.get(0)); // only the times are used
+        List<TimeSlot> gridSlots = ScheduleGenerator.dailySlots(week.getFirst()); // only the times are used
         for (Teacher teacher : teachers) {
             System.out.println("==== " + teacher.name() + " (days →, time ↓) ====");
             StringBuilder header = new StringBuilder(String.format("%-7s", "Time"));

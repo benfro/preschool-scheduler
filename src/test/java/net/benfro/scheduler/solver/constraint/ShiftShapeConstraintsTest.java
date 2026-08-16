@@ -52,7 +52,7 @@ class ShiftShapeConstraintsTest {
         // not be left at the generator's null default.
         Teacher teacher = new Teacher("Alice", null);
         List<TeacherSlot> daySlots = ScheduleGenerator.teacherSlots(teacher, DATE);
-        daySlots.get(0).setActivity(SlotActivity.PLANNING_TIME);
+        daySlots.getFirst().setActivity(SlotActivity.PLANNING_TIME);
         daySlots.get(1).setActivity(SlotActivity.PLANNING_TIME);
         daySlots.get(2).setActivity(SlotActivity.OFF_DUTY);
         daySlots.get(3).setActivity(SlotActivity.OFF_DUTY);
@@ -67,7 +67,7 @@ class ShiftShapeConstraintsTest {
     void embeddedOffDutyValueCountsAsAGapJustLikeUnassigned() {
         Teacher teacher = new Teacher("Alice", null);
         List<TeacherSlot> daySlots = ScheduleGenerator.teacherSlots(teacher, DATE);
-        daySlots.get(0).setActivity(SlotActivity.PLANNING_TIME);
+        daySlots.getFirst().setActivity(SlotActivity.PLANNING_TIME);
         daySlots.get(1).setActivity(SlotActivity.OFF_DUTY);
         daySlots.get(2).setActivity(SlotActivity.PLANNING_TIME);
 
