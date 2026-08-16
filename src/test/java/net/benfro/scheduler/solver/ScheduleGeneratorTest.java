@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import net.benfro.scheduler.domain.AttendanceWindow;
 import net.benfro.scheduler.domain.CoverageRequirement;
 import net.benfro.scheduler.domain.Group;
 import net.benfro.scheduler.domain.Pupil;
@@ -57,7 +58,7 @@ class ScheduleGeneratorTest {
     @Test
     void coverageRequirementsCoverOnlyThePupilPresenceWindow() {
         Pupil pupil = new Pupil(List.of());
-        pupil.addStayingTime(new TimeSlot(DATE, LocalTime.of(9, 0), LocalTime.of(12, 0)));
+        pupil.addStayingTime(new AttendanceWindow(DATE, LocalTime.of(9, 0), LocalTime.of(12, 0)));
         Group group = new Group("Group", List.of());
         group.addPupil(pupil);
 
@@ -72,7 +73,7 @@ class ScheduleGeneratorTest {
     @Test
     void coverageRequirementsAreClippedToOpeningHours() {
         Pupil pupil = new Pupil(List.of());
-        pupil.addStayingTime(new TimeSlot(DATE, LocalTime.of(6, 30), LocalTime.of(8, 0)));
+        pupil.addStayingTime(new AttendanceWindow(DATE, LocalTime.of(6, 30), LocalTime.of(8, 0)));
         Group group = new Group("Group", List.of());
         group.addPupil(pupil);
 
@@ -85,9 +86,9 @@ class ScheduleGeneratorTest {
     @Test
     void overlappingPupilTimesDoNotDuplicateRequirements() {
         Pupil earlyPupil = new Pupil(List.of());
-        earlyPupil.addStayingTime(new TimeSlot(DATE, LocalTime.of(9, 0), LocalTime.of(11, 0)));
+        earlyPupil.addStayingTime(new AttendanceWindow(DATE, LocalTime.of(9, 0), LocalTime.of(11, 0)));
         Pupil latePupil = new Pupil(List.of());
-        latePupil.addStayingTime(new TimeSlot(DATE, LocalTime.of(10, 0), LocalTime.of(13, 0)));
+        latePupil.addStayingTime(new AttendanceWindow(DATE, LocalTime.of(10, 0), LocalTime.of(13, 0)));
         Group group = new Group("Group", List.of());
         group.addPupil(earlyPupil);
         group.addPupil(latePupil);
@@ -108,7 +109,7 @@ class ScheduleGeneratorTest {
     @Test
     void pupilPresenceOnOtherDatesIsIgnored() {
         Pupil pupil = new Pupil(List.of());
-        pupil.addStayingTime(new TimeSlot(DATE.plusDays(1), LocalTime.of(9, 0), LocalTime.of(10, 0)));
+        pupil.addStayingTime(new AttendanceWindow(DATE.plusDays(1), LocalTime.of(9, 0), LocalTime.of(10, 0)));
         Group group = new Group("Group", List.of());
         group.addPupil(pupil);
 

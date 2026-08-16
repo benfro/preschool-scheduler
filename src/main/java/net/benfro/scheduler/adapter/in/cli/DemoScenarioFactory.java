@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Random;
 
 import net.benfro.scheduler.application.ScheduleRequest;
+import net.benfro.scheduler.domain.AttendanceWindow;
 import net.benfro.scheduler.domain.Group;
 import net.benfro.scheduler.domain.Pupil;
 import net.benfro.scheduler.domain.Teacher;
-import net.benfro.scheduler.domain.TimeSlot;
 import net.benfro.scheduler.solver.ScheduleGenerator;
 import net.benfro.scheduler.solver.SchedulingConstants;
 
@@ -59,7 +59,7 @@ final class DemoScenarioFactory {
     }
 
     /** A random staying time of 5-9h that day, aligned to the 30-minute grid and clipped to opening hours. */
-    private static TimeSlot randomStayingTime(LocalDate date, Random random) {
+    private static AttendanceWindow randomStayingTime(LocalDate date, Random random) {
         int hours = MIN_DAILY_ATTENDANCE_HOURS
                 + random.nextInt(MAX_DAILY_ATTENDANCE_HOURS - MIN_DAILY_ATTENDANCE_HOURS + 1);
         int durationMinutes = hours * SchedulingConstants.MINUTES_PER_HOUR;
@@ -67,6 +67,6 @@ final class DemoScenarioFactory {
         int slackSlots = (windowMinutes - durationMinutes) / SchedulingConstants.SLOT_MINUTES;
         int startSlot = slackSlots > 0 ? random.nextInt(slackSlots + 1) : 0;
         LocalTime start = SchedulingConstants.OPENING_TIME.plusMinutes((long) startSlot * SchedulingConstants.SLOT_MINUTES);
-        return new TimeSlot(date, start, start.plusMinutes(durationMinutes));
+        return new AttendanceWindow(date, start, start.plusMinutes(durationMinutes));
     }
 }

@@ -15,6 +15,7 @@ import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.config.solver.SolverConfig;
 
+import net.benfro.scheduler.domain.AttendanceWindow;
 import net.benfro.scheduler.domain.CoverageRequirement;
 import net.benfro.scheduler.domain.Group;
 import net.benfro.scheduler.domain.Pupil;
@@ -22,7 +23,6 @@ import net.benfro.scheduler.domain.SlotActivity;
 import net.benfro.scheduler.domain.Teacher;
 import net.benfro.scheduler.domain.TeacherRoster;
 import net.benfro.scheduler.domain.TeacherSlot;
-import net.benfro.scheduler.domain.TimeSlot;
 
 /**
  * End-to-end smoke test: actually invokes {@link Solver#solve}, not just
@@ -36,7 +36,7 @@ class SolveSmokeTest {
     void trivialProblemReachesAFeasibleSolution() {
         LocalDate date = LocalDate.of(2026, Month.AUGUST, 17);
         Pupil pupil = new Pupil(new ArrayList<>());
-        pupil.addStayingTime(new TimeSlot(date, LocalTime.of(9, 0), LocalTime.of(11, 0)));
+        pupil.addStayingTime(new AttendanceWindow(date, LocalTime.of(9, 0), LocalTime.of(11, 0)));
         Group group = new Group("TestGroup", new ArrayList<>());
         group.addPupil(pupil);
 

@@ -15,12 +15,12 @@ import org.junit.jupiter.api.Test;
 import ai.timefold.solver.core.api.score.HardSoftScore;
 
 import net.benfro.scheduler.application.port.out.SolveSchedulePort;
+import net.benfro.scheduler.domain.AttendanceWindow;
 import net.benfro.scheduler.domain.CoverageRequirement;
 import net.benfro.scheduler.domain.Group;
 import net.benfro.scheduler.domain.Pupil;
 import net.benfro.scheduler.domain.Teacher;
 import net.benfro.scheduler.domain.TeacherRoster;
-import net.benfro.scheduler.domain.TimeSlot;
 import net.benfro.scheduler.solver.ScheduleGenerator;
 
 /**
@@ -37,7 +37,7 @@ class ScheduleCalculationServiceTest {
     void buildsAnUnsolvedProblemMatchingTheRequest() {
         Group group = new Group("Ducklings", new ArrayList<>());
         Pupil pupil = new Pupil(new ArrayList<>());
-        pupil.addStayingTime(new TimeSlot(DATE, LocalTime.of(9, 0), LocalTime.of(11, 0)));
+        pupil.addStayingTime(new AttendanceWindow(DATE, LocalTime.of(9, 0), LocalTime.of(11, 0)));
         group.addPupil(pupil);
         Teacher alice = new Teacher("Alice", group);
         ScheduleRequest request = new ScheduleRequest(List.of(alice), group, List.of(DATE));
@@ -75,7 +75,7 @@ class ScheduleCalculationServiceTest {
     void resultCoverageRequirementsMatchWhatWasSolvedAgainst() {
         Group group = new Group("Ducklings", new ArrayList<>());
         Pupil pupil = new Pupil(new ArrayList<>());
-        pupil.addStayingTime(new TimeSlot(DATE, LocalTime.of(9, 0), LocalTime.of(9, 30)));
+        pupil.addStayingTime(new AttendanceWindow(DATE, LocalTime.of(9, 0), LocalTime.of(9, 30)));
         group.addPupil(pupil);
         Teacher alice = new Teacher("Alice", group);
         ScheduleRequest request = new ScheduleRequest(List.of(alice), group, List.of(DATE));

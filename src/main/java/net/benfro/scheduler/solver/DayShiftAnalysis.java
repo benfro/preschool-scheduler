@@ -211,15 +211,15 @@ public final class DayShiftAnalysis {
             if (activity instanceof SlotActivity.PlanningTime) {
                 runLength++;
             } else {
-                shortfall += shortfallFor(runLength);
+                shortfall += shortfallSlotsFor(runLength);
                 runLength = 0;
             }
         }
-        shortfall += shortfallFor(runLength);
+        shortfall += shortfallSlotsFor(runLength);
         return shortfall;
     }
 
-    private static long shortfallFor(int runLength) {
+    private static long shortfallSlotsFor(int runLength) {
         return runLength > 0 && runLength < MIN_PLANNING_SESSION_SLOTS ? MIN_PLANNING_SESSION_SLOTS - runLength : 0;
     }
 
@@ -235,15 +235,15 @@ public final class DayShiftAnalysis {
             if (activity instanceof SlotActivity.PlanningTime) {
                 runLength++;
             } else {
-                overflow += overflowFor(runLength);
+                overflow += overflowSlotsFor(runLength);
                 runLength = 0;
             }
         }
-        overflow += overflowFor(runLength);
+        overflow += overflowSlotsFor(runLength);
         return overflow;
     }
 
-    private static long overflowFor(int runLength) {
+    private static long overflowSlotsFor(int runLength) {
         return runLength > MAX_PLANNING_SESSION_SLOTS ? runLength - MAX_PLANNING_SESSION_SLOTS : 0;
     }
 }

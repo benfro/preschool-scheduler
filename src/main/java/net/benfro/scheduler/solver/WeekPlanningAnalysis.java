@@ -27,12 +27,13 @@ public final class WeekPlanningAnalysis {
     /**
      * Number of pairs of calendar-adjacent workdays (consecutive entries in the teacher's
      * own sorted, distinct slot dates) that both contain a planning session — i.e., no
-     * workday gap separates them. {@code teacherSlots} need not already be grouped by
-     * teacher; callers are expected to have grouped by teacher first (mixing multiple
-     * teachers' slots in would conflate their calendars).
+     * workday gap separates them. {@code oneTeachersSlots} must already hold a single
+     * teacher's slots only - callers are expected to have grouped by teacher first (mixing
+     * multiple teachers' slots in would conflate their calendars), which the parameter name
+     * makes explicit rather than leaving to the javadoc alone.
      */
-    public static long adjacentPlanningDayCount(List<TeacherSlot> teacherSlots) {
-        Set<LocalDate> planningDays = teacherSlots.stream()
+    public static long adjacentPlanningDayCount(List<TeacherSlot> oneTeachersSlots) {
+        Set<LocalDate> planningDays = oneTeachersSlots.stream()
                 .filter(teacherSlot -> teacherSlot.getActivity() instanceof SlotActivity.PlanningTime)
                 .map(TeacherSlot::date)
                 .collect(Collectors.toCollection(HashSet::new));
@@ -40,7 +41,7 @@ public final class WeekPlanningAnalysis {
             return 0;
         }
 
-        List<LocalDate> workdays = teacherSlots.stream()
+        List<LocalDate> workdays = oneTeachersSlots.stream()
                 .map(TeacherSlot::date)
                 .distinct()
                 .sorted()

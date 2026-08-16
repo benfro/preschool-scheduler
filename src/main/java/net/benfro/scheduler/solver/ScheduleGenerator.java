@@ -9,6 +9,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.benfro.scheduler.domain.AttendanceWindow;
 import net.benfro.scheduler.domain.CoverageRequirement;
 import net.benfro.scheduler.domain.Group;
 import net.benfro.scheduler.domain.Teacher;
@@ -61,7 +62,7 @@ public final class ScheduleGenerator {
      * with no pupil present during a given slot has no requirement for it.
      */
     public static List<CoverageRequirement> coverageRequirements(Group group, LocalDate date) {
-        List<TimeSlot> pupilPresence = group.pupils().stream()
+        List<AttendanceWindow> pupilPresence = group.pupils().stream()
                 .flatMap(pupil -> pupil.stayingTimes().stream())
                 .filter(stayingTime -> stayingTime.date().equals(date))
                 .toList();
@@ -89,7 +90,7 @@ public final class ScheduleGenerator {
         return dates;
     }
 
-    private static boolean overlapsWithinOpeningHours(TimeSlot pupilPresence, TimeSlot gridSlot) {
+    private static boolean overlapsWithinOpeningHours(AttendanceWindow pupilPresence, TimeSlot gridSlot) {
         LocalTime start = clamp(pupilPresence.start());
         LocalTime end = clamp(pupilPresence.end());
         return start.isBefore(end) && start.isBefore(gridSlot.end()) && gridSlot.start().isBefore(end);
