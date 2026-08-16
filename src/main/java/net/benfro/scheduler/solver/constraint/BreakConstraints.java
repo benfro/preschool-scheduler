@@ -25,6 +25,8 @@ public final class BreakConstraints {
         return new Constraint[] {
                 missingRequiredBreak(constraintFactory),
                 tooManyBreakPeriods(constraintFactory),
+                breakSlotsMustNotBeAdjacent(constraintFactory),
+                breakPeriodsTooCloseTogether(constraintFactory),
                 breakTooCloseToShiftEdge(constraintFactory),
                 avoidStartingOrEndingShiftWithBreak(constraintFactory),
         };
@@ -45,9 +47,10 @@ public final class BreakConstraints {
     /**
      * A working day has at most {@link SchedulingConstants#MAX_BREAK_PERIODS_PER_DAY}
      * distinct break periods — a maximal run of consecutive {@code Break} slots counts as
-     * one period no matter how long it is, but a third, fourth, etc. separate period
-     * (breaking, working again, breaking again, working again...) is forbidden. Note
-     * breaks never count toward {@link WorkingHoursConstraints} either way -
+     * one period (in practice always exactly one slot long, since {@link #breakSlotsMustNotBeAdjacent}
+     * forbids a longer run), but a third, fourth, etc. separate period (breaking, working
+     * again, breaking again, working again...) is forbidden. Note breaks never count
+     * toward {@link WorkingHoursConstraints} either way -
      * {@link SlotActivities#countsTowardWorkingHours} excludes them from the 8h/40h caps
      * regardless of how many periods there are.
      */
@@ -58,6 +61,38 @@ public final class BreakConstraints {
                 .penalize(HardSoftScore.ONE_HARD,
                         (teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).breakPeriodCount() - MAX_BREAK_PERIODS_PER_DAY)
                 .asConstraint("Too many break periods in a day");
+    }
+
+    /**
+     * A {@link SlotActivity.Break} period must be a single 30-minute slot — two
+     * {@code Break} slots may never sit back-to-back. "Two breaks" (see
+     * {@link #tooManyBreakPeriods}) means two separate 30-min breaks, not one longer
+     * block; penalized by how many {@code Break} slots are directly preceded by another
+     * {@code Break} slot ({@code (periodLength - 1)} summed across every period).
+     */
+    static Constraint breakSlotsMustNotBeAdjacent(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(TeacherSlot.class)
+                .groupBy(TeacherSlot::getTeacher, TeacherSlot::date, ConstraintCollectors.toList())
+                .filter((teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).adjacentBreakSlotCount() > 0)
+                .penalize(HardSoftScore.ONE_HARD, (teacher, date, daySlots) -> (int) DayShiftAnalysis.of(daySlots).adjacentBreakSlotCount())
+                .asConstraint("Break slots must not be adjacent");
+    }
+
+    /**
+     * When a day has two break periods, they must be separated by at least
+     * {@link SchedulingConstants#MIN_WORK_MINUTES_BETWEEN_BREAK_PERIODS} (3h) of on-duty
+     * time — two breaks stacked close together (e.g. a 15-min breather right after the
+     * morning break) don't serve the same purpose as a genuinely spaced mid-morning break
+     * plus lunch. Only bites once {@link #tooManyBreakPeriods} already caps the day at
+     * (at most) two periods; penalized by how many minutes short each gap is.
+     */
+    static Constraint breakPeriodsTooCloseTogether(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(TeacherSlot.class)
+                .groupBy(TeacherSlot::getTeacher, TeacherSlot::date, ConstraintCollectors.toList())
+                .filter((teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).breakPeriodGapShortfallMinutes() > 0)
+                .penalize(HardSoftScore.ONE_HARD,
+                        (teacher, date, daySlots) -> (int) DayShiftAnalysis.of(daySlots).breakPeriodGapShortfallMinutes())
+                .asConstraint("Break periods too close together");
     }
 
     /**

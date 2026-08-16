@@ -1,9 +1,12 @@
 package net.benfro.scheduler.solver;
 
 import static net.benfro.scheduler.solver.SchedulingConstants.BREAK_EDGE_BUFFER_SLOTS;
+import static net.benfro.scheduler.solver.SchedulingConstants.MAX_PLANNING_SESSION_SLOTS;
 import static net.benfro.scheduler.solver.SchedulingConstants.MIN_PLANNING_SESSION_SLOTS;
+import static net.benfro.scheduler.solver.SchedulingConstants.MIN_WORK_MINUTES_BETWEEN_BREAK_PERIODS;
 import static net.benfro.scheduler.solver.SchedulingConstants.SLOT_MINUTES;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -118,16 +121,82 @@ public final class DayShiftAnalysis {
 
     /** Number of maximal runs of consecutive {@code Break} slots in the day (time-sorted). */
     public long breakPeriodCount() {
-        long periods = 0;
-        boolean inBreak = false;
-        for (SlotActivity activity : sortedActivities) {
-            boolean isBreak = activity instanceof SlotActivity.Break;
-            if (isBreak && !inBreak) {
-                periods++;
+        return breakPeriodRanges().size();
+    }
+
+    /**
+     * Number of {@code Break} slots directly preceded by another {@code Break} slot —
+     * zero once every break period is capped at a single 30-minute slot. Equivalent to
+     * summing {@code (periodLength - 1)} across every break period in the day.
+     */
+    public long adjacentBreakSlotCount() {
+        long count = 0;
+        for (int i = 1; i < sortedActivities.size(); i++) {
+            if (sortedActivities.get(i) instanceof SlotActivity.Break && sortedActivities.get(i - 1) instanceof SlotActivity.Break) {
+                count++;
             }
-            inBreak = isBreak;
         }
-        return periods;
+        return count;
+    }
+
+    /**
+     * How many minutes short of {@link SchedulingConstants#MIN_WORK_MINUTES_BETWEEN_BREAK_PERIODS}
+     * each gap between two consecutive break periods is, summed across the day — only the
+     * on-duty (teaching/planning) time between them counts toward the gap, so a shift
+     * that's mid-construction (with stray off-duty slots) isn't given undue credit. Zero
+     * if the day has fewer than two break periods.
+     */
+    public long breakPeriodGapShortfallMinutes() {
+        List<int[]> periods = breakPeriodRanges();
+        if (periods.size() < 2) {
+            return 0;
+        }
+        long shortfall = 0;
+        for (int i = 0; i + 1 < periods.size(); i++) {
+            long gapMinutes = 0;
+            for (int index = periods.get(i)[1] + 1; index < periods.get(i + 1)[0]; index++) {
+                if (SlotActivities.isOnDuty(sortedActivities.get(index))) {
+                    gapMinutes += SLOT_MINUTES;
+                }
+            }
+            if (gapMinutes < MIN_WORK_MINUTES_BETWEEN_BREAK_PERIODS) {
+                shortfall += MIN_WORK_MINUTES_BETWEEN_BREAK_PERIODS - gapMinutes;
+            }
+        }
+        return shortfall;
+    }
+
+    /** Number of maximal runs of consecutive {@code PlanningTime} slots in the day (time-sorted). */
+    public long planningSessionCount() {
+        long sessions = 0;
+        boolean inSession = false;
+        for (SlotActivity activity : sortedActivities) {
+            boolean isPlanning = activity instanceof SlotActivity.PlanningTime;
+            if (isPlanning && !inSession) {
+                sessions++;
+            }
+            inSession = isPlanning;
+        }
+        return sessions;
+    }
+
+    /** Index ranges (inclusive, time-sorted) of each maximal run of consecutive {@code Break} slots. */
+    private List<int[]> breakPeriodRanges() {
+        List<int[]> ranges = new ArrayList<>();
+        int start = -1;
+        for (int i = 0; i < sortedActivities.size(); i++) {
+            boolean isBreak = sortedActivities.get(i) instanceof SlotActivity.Break;
+            if (isBreak && start == -1) {
+                start = i;
+            } else if (!isBreak && start != -1) {
+                ranges.add(new int[] {start, i - 1});
+                start = -1;
+            }
+        }
+        if (start != -1) {
+            ranges.add(new int[] {start, sortedActivities.size() - 1});
+        }
+        return ranges;
     }
 
     /**
@@ -152,5 +221,29 @@ public final class DayShiftAnalysis {
 
     private static long shortfallFor(int runLength) {
         return runLength > 0 && runLength < MIN_PLANNING_SESSION_SLOTS ? MIN_PLANNING_SESSION_SLOTS - runLength : 0;
+    }
+
+    /**
+     * How many slots over {@link SchedulingConstants#MAX_PLANNING_SESSION_SLOTS} each
+     * too-long {@code PlanningTime} run (maximal run of consecutive planning slots) is,
+     * summed across the day. E.g. one 4-slot run with a max of 2 contributes 2.
+     */
+    public long longPlanningSlotCount() {
+        long overflow = 0;
+        int runLength = 0;
+        for (SlotActivity activity : sortedActivities) {
+            if (activity instanceof SlotActivity.PlanningTime) {
+                runLength++;
+            } else {
+                overflow += overflowFor(runLength);
+                runLength = 0;
+            }
+        }
+        overflow += overflowFor(runLength);
+        return overflow;
+    }
+
+    private static long overflowFor(int runLength) {
+        return runLength > MAX_PLANNING_SESSION_SLOTS ? runLength - MAX_PLANNING_SESSION_SLOTS : 0;
     }
 }

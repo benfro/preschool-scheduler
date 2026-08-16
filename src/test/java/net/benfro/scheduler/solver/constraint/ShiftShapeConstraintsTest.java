@@ -3,6 +3,8 @@ package net.benfro.scheduler.solver.constraint;
 import static net.benfro.scheduler.solver.constraint.ConstraintTestFixtures.DATE;
 import static net.benfro.scheduler.solver.constraint.ConstraintTestFixtures.onDutySlots;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -181,5 +183,116 @@ class ShiftShapeConstraintsTest {
                 Arguments.of(6, List.of(0, 1, 2, 3, 4, 5), 0), // the whole day is one long session
                 Arguments.of(6, List.of(3), 1), // isolated single slot, min is 2
                 Arguments.of(10, List.of(2, 7), 2)); // two separate lone slots, each short by 1
+    }
+
+    // ************************************************************************
+    // planningSessionTooLong
+    // ************************************************************************
+
+    @ParameterizedTest(name = "{0}-slot day, planning at {1} -> penalty {2}")
+    @MethodSource("planningSessionOverflowScenarios")
+    void planningSessionOverflow(int baseSlotCount, List<Integer> planningIndices, int expectedPenalty) {
+        Teacher teacher = new Teacher("Alice", null);
+        List<TeacherSlot> slots = onDutySlots(teacher, DATE, baseSlotCount, SlotActivity.BREAK);
+        planningIndices.forEach(index -> slots.get(index).setActivity(SlotActivity.PLANNING_TIME));
+
+        SingleConstraintAssertion assertion = constraintVerifier
+                .verifyThat((provider, factory) -> ShiftShapeConstraints.planningSessionTooLong(factory))
+                .given(slots.toArray());
+        if (expectedPenalty == 0) {
+            assertion.hasNoImpact();
+        } else {
+            assertion.penalizesBy(expectedPenalty);
+        }
+    }
+
+    static Stream<Arguments> planningSessionOverflowScenarios() {
+        return Stream.of(
+                Arguments.of(6, List.of(), 0), // no planning time at all
+                Arguments.of(6, List.of(2, 3), 0), // exactly the 2-slot max, no impact
+                Arguments.of(6, List.of(1, 2, 3), 1), // 3-slot session, 1 over the max
+                Arguments.of(10, List.of(0, 1, 2, 3), 2), // 4-slot session, 2 over the max
+                Arguments.of(10, List.of(1, 2, 6, 7, 8), 1)); // one at-max session (no impact) plus one 3-slot session (1 over)
+    }
+
+    // ************************************************************************
+    // tooManyPlanningSessionsPerDay
+    // ************************************************************************
+
+    @ParameterizedTest(name = "planning at {0} -> penalty {1}")
+    @MethodSource("planningSessionCountScenarios")
+    void planningSessionCount(List<Integer> planningIndices, int expectedPenalty) {
+        Teacher teacher = new Teacher("Alice", null);
+        List<TeacherSlot> slots = onDutySlots(teacher, DATE, 10, SlotActivity.BREAK);
+        planningIndices.forEach(index -> slots.get(index).setActivity(SlotActivity.PLANNING_TIME));
+
+        SingleConstraintAssertion assertion = constraintVerifier
+                .verifyThat((provider, factory) -> ShiftShapeConstraints.tooManyPlanningSessionsPerDay(factory))
+                .given(slots.toArray());
+        if (expectedPenalty == 0) {
+            assertion.hasNoImpact();
+        } else {
+            assertion.penalizesBy(expectedPenalty);
+        }
+    }
+
+    static Stream<Arguments> planningSessionCountScenarios() {
+        return Stream.of(
+                Arguments.of(List.of(), 0), // no planning at all
+                Arguments.of(List.of(2, 3), 0), // one contiguous session
+                Arguments.of(List.of(2, 3, 7, 8), 1), // two separate sessions
+                Arguments.of(List.of(1, 2, 5, 6, 8, 9), 2)); // three separate sessions
+    }
+
+    // ************************************************************************
+    // planningSessionsNeedWorkdayGap
+    // ************************************************************************
+
+    /** Every slot of each given date, explicitly {@code OFF_DUTY} by default so every date shows up as one of the teacher's workdays. */
+    private static List<TeacherSlot> weekOfDays(Teacher teacher, LocalDate... dates) {
+        List<TeacherSlot> all = new ArrayList<>();
+        for (LocalDate date : dates) {
+            List<TeacherSlot> daySlots = ScheduleGenerator.teacherSlots(teacher, date);
+            daySlots.forEach(slot -> slot.setActivity(SlotActivity.OFF_DUTY));
+            all.addAll(daySlots);
+        }
+        return all;
+    }
+
+    @Test
+    void planningOnCalendarAdjacentWorkdaysIsPenalized() {
+        Teacher teacher = new Teacher("Alice", null);
+        List<TeacherSlot> slots = weekOfDays(teacher, DATE, DATE.plusDays(1), DATE.plusDays(2));
+        slots.get(0).setActivity(SlotActivity.PLANNING_TIME); // Monday, slot 0
+        slots.get(21).setActivity(SlotActivity.PLANNING_TIME); // Tuesday, slot 0 - no workday between them
+
+        constraintVerifier.verifyThat((provider, factory) -> ShiftShapeConstraints.planningSessionsNeedWorkdayGap(factory))
+                .given(slots.toArray())
+                .penalizesBy(1);
+    }
+
+    @Test
+    void planningWithAWorkdayGapHasNoImpact() {
+        Teacher teacher = new Teacher("Alice", null);
+        List<TeacherSlot> slots = weekOfDays(teacher, DATE, DATE.plusDays(1), DATE.plusDays(2));
+        slots.get(0).setActivity(SlotActivity.PLANNING_TIME); // Monday
+        slots.get(42).setActivity(SlotActivity.PLANNING_TIME); // Wednesday - Tuesday sits between them, unplanned
+
+        constraintVerifier.verifyThat((provider, factory) -> ShiftShapeConstraints.planningSessionsNeedWorkdayGap(factory))
+                .given(slots.toArray())
+                .hasNoImpact();
+    }
+
+    @Test
+    void threeConsecutivePlanningWorkdaysIsPenalizedTwice() {
+        Teacher teacher = new Teacher("Alice", null);
+        List<TeacherSlot> slots = weekOfDays(teacher, DATE, DATE.plusDays(1), DATE.plusDays(2));
+        slots.get(0).setActivity(SlotActivity.PLANNING_TIME); // Monday
+        slots.get(21).setActivity(SlotActivity.PLANNING_TIME); // Tuesday
+        slots.get(42).setActivity(SlotActivity.PLANNING_TIME); // Wednesday - two adjacent pairs: Mon/Tue, Tue/Wed
+
+        constraintVerifier.verifyThat((provider, factory) -> ShiftShapeConstraints.planningSessionsNeedWorkdayGap(factory))
+                .given(slots.toArray())
+                .penalizesBy(2);
     }
 }

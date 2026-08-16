@@ -63,6 +63,58 @@ class BreakConstraintsTest {
     }
 
     // ************************************************************************
+    // breakSlotsMustNotBeAdjacent
+    // ************************************************************************
+
+    @Test
+    void singleSlotBreakHasNoImpact() {
+        Teacher teacher = new Teacher("Alice", null);
+        List<TeacherSlot> slots = onDutySlots(teacher, DATE, 10, SlotActivity.PLANNING_TIME);
+        slots.get(4).setActivity(SlotActivity.BREAK);
+
+        constraintVerifier.verifyThat((provider, factory) -> BreakConstraints.breakSlotsMustNotBeAdjacent(factory))
+                .given(slots.toArray())
+                .hasNoImpact();
+    }
+
+    @Test
+    void twoSeparateSingleSlotBreaksHaveNoImpact() {
+        Teacher teacher = new Teacher("Alice", null);
+        List<TeacherSlot> slots = onDutySlots(teacher, DATE, 10, SlotActivity.PLANNING_TIME);
+        slots.get(3).setActivity(SlotActivity.BREAK);
+        slots.get(8).setActivity(SlotActivity.BREAK);
+
+        constraintVerifier.verifyThat((provider, factory) -> BreakConstraints.breakSlotsMustNotBeAdjacent(factory))
+                .given(slots.toArray())
+                .hasNoImpact();
+    }
+
+    @Test
+    void twoAdjacentBreakSlotsIsPenalizedOnce() {
+        Teacher teacher = new Teacher("Alice", null);
+        List<TeacherSlot> slots = onDutySlots(teacher, DATE, 10, SlotActivity.PLANNING_TIME);
+        slots.get(4).setActivity(SlotActivity.BREAK);
+        slots.get(5).setActivity(SlotActivity.BREAK); // one 2-slot period - 1 adjacent pair
+
+        constraintVerifier.verifyThat((provider, factory) -> BreakConstraints.breakSlotsMustNotBeAdjacent(factory))
+                .given(slots.toArray())
+                .penalizesBy(1);
+    }
+
+    @Test
+    void fiveConsecutiveBreakSlotsIsPenalizedByFour() {
+        Teacher teacher = new Teacher("Alice", null);
+        List<TeacherSlot> slots = onDutySlots(teacher, DATE, 10, SlotActivity.PLANNING_TIME);
+        for (int i = 2; i <= 6; i++) {
+            slots.get(i).setActivity(SlotActivity.BREAK); // 5 consecutive slots - 4 adjacent pairs
+        }
+
+        constraintVerifier.verifyThat((provider, factory) -> BreakConstraints.breakSlotsMustNotBeAdjacent(factory))
+                .given(slots.toArray())
+                .penalizesBy(4);
+    }
+
+    // ************************************************************************
     // tooManyBreakPeriods
     // ************************************************************************
 
@@ -124,6 +176,45 @@ class BreakConstraintsTest {
         constraintVerifier.verifyThat((provider, factory) -> BreakConstraints.tooManyBreakPeriods(factory))
                 .given(slots.toArray())
                 .penalizesBy(1);
+    }
+
+    // ************************************************************************
+    // breakPeriodsTooCloseTogether
+    // ************************************************************************
+
+    @Test
+    void singleBreakPeriodHasNoSpacingImpact() {
+        Teacher teacher = new Teacher("Alice", null);
+        List<TeacherSlot> slots = onDutySlots(teacher, DATE, 10, SlotActivity.PLANNING_TIME);
+        slots.get(4).setActivity(SlotActivity.BREAK);
+
+        constraintVerifier.verifyThat((provider, factory) -> BreakConstraints.breakPeriodsTooCloseTogether(factory))
+                .given(slots.toArray())
+                .hasNoImpact();
+    }
+
+    @Test
+    void twoBreakPeriodsExactlyThreeWorkHoursApartHasNoImpact() {
+        Teacher teacher = new Teacher("Alice", null);
+        List<TeacherSlot> slots = onDutySlots(teacher, DATE, 20, SlotActivity.PLANNING_TIME);
+        slots.get(2).setActivity(SlotActivity.BREAK); // period ends at index 2
+        slots.get(9).setActivity(SlotActivity.BREAK); // 6 on-duty slots (3h) between indices 3-8, then break at 9
+
+        constraintVerifier.verifyThat((provider, factory) -> BreakConstraints.breakPeriodsTooCloseTogether(factory))
+                .given(slots.toArray())
+                .hasNoImpact();
+    }
+
+    @Test
+    void twoBreakPeriodsTooCloseTogetherIsPenalizedByShortfallMinutes() {
+        Teacher teacher = new Teacher("Alice", null);
+        List<TeacherSlot> slots = onDutySlots(teacher, DATE, 20, SlotActivity.PLANNING_TIME);
+        slots.get(2).setActivity(SlotActivity.BREAK); // period ends at index 2
+        slots.get(7).setActivity(SlotActivity.BREAK); // only 4 on-duty slots (2h) between them - 1h short
+
+        constraintVerifier.verifyThat((provider, factory) -> BreakConstraints.breakPeriodsTooCloseTogether(factory))
+                .given(slots.toArray())
+                .penalizesBy(60);
     }
 
     // ************************************************************************

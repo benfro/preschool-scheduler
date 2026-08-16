@@ -32,6 +32,13 @@ public final class SchedulingConstants {
     public static final int MAX_BREAK_PERIODS_PER_DAY = 2;
 
     /**
+     * Two break periods in the same day must be separated by at least this many minutes
+     * of on-duty (non-break) time — a lunch break and a mid-morning break need to be
+     * genuinely spaced apart, not stacked a slot or two from each other.
+     */
+    public static final int MIN_WORK_MINUTES_BETWEEN_BREAK_PERIODS = 3 * MINUTES_PER_HOUR;
+
+    /**
      * How many half-hour slots one teacher can plausibly teach in a day, based on the
      * default daily cap. The 07:00-17:30 window (10.5h) exceeds this, so any group whose
      * pupils are present all day structurally needs more than one teacher — that's
@@ -70,6 +77,20 @@ public final class SchedulingConstants {
      * time is not a usable session.
      */
     public static final int MIN_PLANNING_SESSION_SLOTS = 2;
+
+    /**
+     * A {@code PlanningTime} session (a maximal run of consecutive planning slots in a
+     * day) must be at most this many slots long — combined with
+     * {@link #MIN_PLANNING_SESSION_SLOTS}, a planning session is always exactly one hour.
+     */
+    public static final int MAX_PLANNING_SESSION_SLOTS = 2;
+
+    /**
+     * A working day has at most this many distinct planning-time sessions (maximal runs
+     * of consecutive {@code PlanningTime} slots) — planning time is one focused block, not
+     * scattered across the day.
+     */
+    public static final int MAX_PLANNING_SESSIONS_PER_DAY = 1;
 
     /**
      * A {@code Break} may not fall within this many on-duty slots of a teacher's shift

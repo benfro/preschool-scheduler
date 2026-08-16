@@ -1,6 +1,7 @@
 package net.benfro.scheduler.solver.constraint;
 
 import static net.benfro.scheduler.solver.SchedulingConstants.MAX_BREAK_ALLOWANCE_MINUTES;
+import static net.benfro.scheduler.solver.SchedulingConstants.MAX_PLANNING_SESSIONS_PER_DAY;
 import static net.benfro.scheduler.solver.SchedulingConstants.MINUTES_PER_HOUR;
 
 import ai.timefold.solver.core.api.score.HardSoftScore;
@@ -11,6 +12,8 @@ import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import net.benfro.scheduler.domain.SlotActivity;
 import net.benfro.scheduler.domain.TeacherSlot;
 import net.benfro.scheduler.solver.DayShiftAnalysis;
+import net.benfro.scheduler.solver.SchedulingConstants;
+import net.benfro.scheduler.solver.WeekPlanningAnalysis;
 
 /** Hard rules on the overall shape of a teacher's day: contiguity, total span, and planning-session length. */
 public final class ShiftShapeConstraints {
@@ -23,6 +26,9 @@ public final class ShiftShapeConstraints {
                 shiftMustBeContiguous(constraintFactory),
                 shiftSpanExceedsCap(constraintFactory),
                 planningSessionTooShort(constraintFactory),
+                planningSessionTooLong(constraintFactory),
+                tooManyPlanningSessionsPerDay(constraintFactory),
+                planningSessionsNeedWorkdayGap(constraintFactory),
         };
     }
 
@@ -72,5 +78,50 @@ public final class ShiftShapeConstraints {
                 .filter((teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).shortPlanningSlotCount() > 0)
                 .penalize(HardSoftScore.ONE_HARD, (teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).shortPlanningSlotCount())
                 .asConstraint("Planning session too short");
+    }
+
+    /**
+     * A {@link SlotActivity.PlanningTime} session — a maximal run of consecutive planning
+     * slots in a day — must be at most {@link SchedulingConstants#MAX_PLANNING_SESSION_SLOTS}
+     * slots long. Combined with {@link #planningSessionTooShort}, a planning session is
+     * always exactly {@code MAX_PLANNING_SESSION_SLOTS} (1h) slots, never a sprawling
+     * multi-hour block.
+     */
+    static Constraint planningSessionTooLong(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(TeacherSlot.class)
+                .groupBy(TeacherSlot::getTeacher, TeacherSlot::date, ConstraintCollectors.toList())
+                .filter((teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).longPlanningSlotCount() > 0)
+                .penalize(HardSoftScore.ONE_HARD, (teacher, date, daySlots) -> (int) DayShiftAnalysis.of(daySlots).longPlanningSlotCount())
+                .asConstraint("Planning session too long");
+    }
+
+    /**
+     * A working day may contain at most {@link SchedulingConstants#MAX_PLANNING_SESSIONS_PER_DAY}
+     * (1) distinct {@link SlotActivity.PlanningTime} session — a maximal run of consecutive
+     * planning slots counts as one session no matter how long it is, but splitting planning
+     * time into two or more separate sessions the same day (planning, teaching, planning
+     * again) is forbidden.
+     */
+    static Constraint tooManyPlanningSessionsPerDay(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(TeacherSlot.class)
+                .groupBy(TeacherSlot::getTeacher, TeacherSlot::date, ConstraintCollectors.toList())
+                .filter((teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).planningSessionCount() > MAX_PLANNING_SESSIONS_PER_DAY)
+                .penalize(HardSoftScore.ONE_HARD, (teacher, date, daySlots) ->
+                        (int) (DayShiftAnalysis.of(daySlots).planningSessionCount() - MAX_PLANNING_SESSIONS_PER_DAY))
+                .asConstraint("Too many planning sessions in a day");
+    }
+
+    /**
+     * A teacher's planning sessions must have at least one workday between them - two
+     * planning-session days may not be calendar-adjacent workdays. See
+     * {@link WeekPlanningAnalysis} for what "workday" means here and why plain calendar
+     * adjacency is the right check.
+     */
+    static Constraint planningSessionsNeedWorkdayGap(ConstraintFactory constraintFactory) {
+        return constraintFactory.forEach(TeacherSlot.class)
+                .groupBy(TeacherSlot::getTeacher, ConstraintCollectors.toList())
+                .filter((teacher, teacherSlots) -> WeekPlanningAnalysis.adjacentPlanningDayCount(teacherSlots) > 0)
+                .penalize(HardSoftScore.ONE_HARD, (teacher, teacherSlots) -> (int) WeekPlanningAnalysis.adjacentPlanningDayCount(teacherSlots))
+                .asConstraint("Planning sessions need a workday between them");
     }
 }

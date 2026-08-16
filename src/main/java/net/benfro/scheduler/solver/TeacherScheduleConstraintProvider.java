@@ -17,7 +17,7 @@ import net.benfro.scheduler.solver.constraint.WorkingHoursConstraints;
  * Composition root for every constraint in the schedule-calculation problem. Timefold's
  * {@code SolverConfig.withConstraintProviderClass} needs exactly one
  * {@link ConstraintProvider} class, so this stays that single entry point - but none of the
- * 16 constraints are defined inline here anymore. They live in cohesive groups under
+ * 21 constraints are defined inline here anymore. They live in cohesive groups under
  * {@link net.benfro.scheduler.solver.constraint}:
  * <ul>
  *   <li>{@link CoverageConstraints} - every {@code CoverageRequirement} must actually be taught</li>
