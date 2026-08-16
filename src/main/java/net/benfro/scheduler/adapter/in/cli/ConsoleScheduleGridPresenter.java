@@ -81,8 +81,8 @@ final class ConsoleScheduleGridPresenter {
     private static SlotActivity activityAt(List<TeacherSlot> allSlots, Teacher teacher, LocalDate date, LocalTime start) {
         return allSlots.stream()
                 .filter(teacherSlot -> teacherSlot.getTeacher().equals(teacher)
-                        && teacherSlot.getSlot().date().equals(date)
-                        && teacherSlot.getSlot().start().equals(start))
+                        && teacherSlot.date().equals(date)
+                        && teacherSlot.start().equals(start))
                 .map(TeacherSlot::getActivity)
                 .findFirst().orElse(null);
     }
@@ -125,7 +125,7 @@ final class ConsoleScheduleGridPresenter {
                     && teacherSlot.getActivity() instanceof SlotActivity.Teaching teaching
                     && teaching.group().equals(requirement.group()));
             if (!covered) {
-                gaps.add(requirement.slot().date() + " " + requirement.slot().start());
+                gaps.add(requirement.date() + " " + requirement.start());
             }
         }
         if (gaps.isEmpty()) {

@@ -34,7 +34,7 @@ public final class BreakConstraints {
     static Constraint missingRequiredBreak(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(TeacherSlot.class)
                 .filter(teacherSlot -> SlotActivities.isOnDuty(teacherSlot.getActivity()))
-                .groupBy(TeacherSlot::getTeacher, teacherSlot -> teacherSlot.getSlot().date(),
+                .groupBy(TeacherSlot::getTeacher, TeacherSlot::date,
                         ConstraintCollectors.toList(TeacherSlot::getActivity))
                 .filter((teacher, date, activities) -> activities.size() * SLOT_MINUTES >= BREAK_REQUIRED_AFTER_MINUTES
                         && activities.stream().noneMatch(activity -> activity instanceof SlotActivity.Break))
@@ -53,7 +53,7 @@ public final class BreakConstraints {
      */
     static Constraint tooManyBreakPeriods(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(TeacherSlot.class)
-                .groupBy(TeacherSlot::getTeacher, teacherSlot -> teacherSlot.getSlot().date(), ConstraintCollectors.toList())
+                .groupBy(TeacherSlot::getTeacher, TeacherSlot::date, ConstraintCollectors.toList())
                 .filter((teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).breakPeriodCount() > MAX_BREAK_PERIODS_PER_DAY)
                 .penalize(HardSoftScore.ONE_HARD,
                         (teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).breakPeriodCount() - MAX_BREAK_PERIODS_PER_DAY)
@@ -70,7 +70,7 @@ public final class BreakConstraints {
      */
     static Constraint breakTooCloseToShiftEdge(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(TeacherSlot.class)
-                .groupBy(TeacherSlot::getTeacher, teacherSlot -> teacherSlot.getSlot().date(), ConstraintCollectors.toList())
+                .groupBy(TeacherSlot::getTeacher, TeacherSlot::date, ConstraintCollectors.toList())
                 .filter((teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).edgeBreakSlotCount() > 0)
                 .penalize(HardSoftScore.ONE_HARD, (teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).edgeBreakSlotCount())
                 .asConstraint("Break too close to shift edge");
@@ -85,7 +85,7 @@ public final class BreakConstraints {
      */
     static Constraint avoidStartingOrEndingShiftWithBreak(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(TeacherSlot.class)
-                .groupBy(TeacherSlot::getTeacher, teacherSlot -> teacherSlot.getSlot().date(), ConstraintCollectors.toList())
+                .groupBy(TeacherSlot::getTeacher, TeacherSlot::date, ConstraintCollectors.toList())
                 .filter((teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).shiftBreakEdgeCount() > 0)
                 .penalize(HardSoftScore.ONE_SOFT, (teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).shiftBreakEdgeCount())
                 .asConstraint("Avoid starting or ending shift with a break");

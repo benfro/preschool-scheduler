@@ -32,7 +32,7 @@ public final class FairnessConstraints {
     static Constraint balanceEarlySlotsAcrossTeachers(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(TeacherSlot.class)
                 .filter(teacherSlot -> teacherSlot.getActivity() instanceof SlotActivity.Teaching
-                        && teacherSlot.getSlot().start().isBefore(MIDDAY))
+                        && teacherSlot.start().isBefore(MIDDAY))
                 .groupBy(ConstraintCollectors.loadBalance(TeacherSlot::getTeacher))
                 .penalize(HardSoftScore.ONE_SOFT, FairnessConstraints::unfairnessScore)
                 .asConstraint("Balance early slots across teachers");
@@ -42,7 +42,7 @@ public final class FairnessConstraints {
     static Constraint balanceLateSlotsAcrossTeachers(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(TeacherSlot.class)
                 .filter(teacherSlot -> teacherSlot.getActivity() instanceof SlotActivity.Teaching
-                        && !teacherSlot.getSlot().start().isBefore(MIDDAY))
+                        && !teacherSlot.start().isBefore(MIDDAY))
                 .groupBy(ConstraintCollectors.loadBalance(TeacherSlot::getTeacher))
                 .penalize(HardSoftScore.ONE_SOFT, FairnessConstraints::unfairnessScore)
                 .asConstraint("Balance late slots across teachers");

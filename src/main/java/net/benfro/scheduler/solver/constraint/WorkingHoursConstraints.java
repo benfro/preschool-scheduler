@@ -29,7 +29,7 @@ public final class WorkingHoursConstraints {
     static Constraint teacherDailyHoursExceeded(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(TeacherSlot.class)
                 .filter(teacherSlot -> SlotActivities.countsTowardWorkingHours(teacherSlot.getActivity()))
-                .groupBy(TeacherSlot::getTeacher, teacherSlot -> teacherSlot.getSlot().date(), ConstraintCollectors.count())
+                .groupBy(TeacherSlot::getTeacher, TeacherSlot::date, ConstraintCollectors.count())
                 .filter((teacher, date, slotCount) -> slotCount * SLOT_MINUTES > teacher.dailyHoursMax() * MINUTES_PER_HOUR)
                 .penalize(HardSoftScore.ONE_HARD,
                         (teacher, date, slotCount) -> slotCount * SLOT_MINUTES - teacher.dailyHoursMax() * MINUTES_PER_HOUR)
@@ -40,7 +40,7 @@ public final class WorkingHoursConstraints {
     static Constraint teacherWeeklyHoursExceeded(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(TeacherSlot.class)
                 .filter(teacherSlot -> SlotActivities.countsTowardWorkingHours(teacherSlot.getActivity()))
-                .groupBy(TeacherSlot::getTeacher, teacherSlot -> IsoWeek.of(teacherSlot.getSlot().date()), ConstraintCollectors.count())
+                .groupBy(TeacherSlot::getTeacher, teacherSlot -> IsoWeek.of(teacherSlot.date()), ConstraintCollectors.count())
                 .filter((teacher, week, slotCount) -> slotCount * SLOT_MINUTES > teacher.hoursPerWeek() * MINUTES_PER_HOUR)
                 .penalize(HardSoftScore.ONE_HARD,
                         (teacher, week, slotCount) -> slotCount * SLOT_MINUTES - teacher.hoursPerWeek() * MINUTES_PER_HOUR)

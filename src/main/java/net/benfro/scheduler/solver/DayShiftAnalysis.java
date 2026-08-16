@@ -42,7 +42,7 @@ public final class DayShiftAnalysis {
     /** Analyzes one teacher's slots for a single day - callers are responsible for grouping by (teacher, date) first. */
     public static DayShiftAnalysis of(List<TeacherSlot> daySlots) {
         List<SlotActivity> sorted = daySlots.stream()
-                .sorted(Comparator.comparing(teacherSlot -> teacherSlot.getSlot().start()))
+                .sorted(Comparator.comparing(TeacherSlot::start))
                 .map(TeacherSlot::getActivity)
                 .toList();
         return new DayShiftAnalysis(sorted);

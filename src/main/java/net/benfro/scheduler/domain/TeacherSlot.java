@@ -1,5 +1,8 @@
 package net.benfro.scheduler.domain;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+
 import ai.timefold.solver.core.api.domain.common.PlanningId;
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
@@ -37,4 +40,14 @@ public class TeacherSlot {
 
     @PlanningVariable(valueRangeProviderRefs = "activityRange")
     private SlotActivity activity;
+
+    /** Delegates to {@code slot.date()} - lets callers ask a {@code TeacherSlot} its own date without reaching through {@link #getSlot()}. */
+    public LocalDate date() {
+        return slot.date();
+    }
+
+    /** Delegates to {@code slot.start()} - lets callers ask a {@code TeacherSlot} its own start time without reaching through {@link #getSlot()}. */
+    public LocalTime start() {
+        return slot.start();
+    }
 }

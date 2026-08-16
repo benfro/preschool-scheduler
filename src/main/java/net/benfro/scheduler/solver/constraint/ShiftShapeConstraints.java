@@ -36,7 +36,7 @@ public final class ShiftShapeConstraints {
      */
     static Constraint shiftMustBeContiguous(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(TeacherSlot.class)
-                .groupBy(TeacherSlot::getTeacher, teacherSlot -> teacherSlot.getSlot().date(), ConstraintCollectors.toList())
+                .groupBy(TeacherSlot::getTeacher, TeacherSlot::date, ConstraintCollectors.toList())
                 .filter((teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).gapSlotCount() > 0)
                 .penalize(HardSoftScore.ONE_HARD, (teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).gapSlotCount())
                 .asConstraint("Shift must be contiguous");
@@ -52,7 +52,7 @@ public final class ShiftShapeConstraints {
      */
     static Constraint shiftSpanExceedsCap(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(TeacherSlot.class)
-                .groupBy(TeacherSlot::getTeacher, teacherSlot -> teacherSlot.getSlot().date(), ConstraintCollectors.toList())
+                .groupBy(TeacherSlot::getTeacher, TeacherSlot::date, ConstraintCollectors.toList())
                 .filter((teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).shiftSpanMinutes()
                         > teacher.dailyHoursMax() * MINUTES_PER_HOUR + MAX_BREAK_ALLOWANCE_MINUTES)
                 .penalize(HardSoftScore.ONE_HARD, (teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).shiftSpanMinutes()
@@ -68,7 +68,7 @@ public final class ShiftShapeConstraints {
      */
     static Constraint planningSessionTooShort(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(TeacherSlot.class)
-                .groupBy(TeacherSlot::getTeacher, teacherSlot -> teacherSlot.getSlot().date(), ConstraintCollectors.toList())
+                .groupBy(TeacherSlot::getTeacher, TeacherSlot::date, ConstraintCollectors.toList())
                 .filter((teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).shortPlanningSlotCount() > 0)
                 .penalize(HardSoftScore.ONE_HARD, (teacher, date, daySlots) -> DayShiftAnalysis.of(daySlots).shortPlanningSlotCount())
                 .asConstraint("Planning session too short");

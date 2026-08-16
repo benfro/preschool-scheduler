@@ -48,7 +48,7 @@ public final class PreferenceConstraints {
     static Constraint minimizeDistinctTeachersPerGroupPerDay(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(TeacherSlot.class)
                 .filter(teacherSlot -> teacherSlot.getActivity() instanceof SlotActivity.Teaching)
-                .groupBy(SlotActivities::teachingGroupOf, teacherSlot -> teacherSlot.getSlot().date(),
+                .groupBy(SlotActivities::teachingGroupOf, TeacherSlot::date,
                         ConstraintCollectors.count(), ConstraintCollectors.countDistinct(TeacherSlot::getTeacher))
                 .filter((group, date, teachingSlotCount, teacherCount) -> teacherCount > minimumTeachersNeeded(teachingSlotCount))
                 .penalize(HardSoftScore.ONE_SOFT,
@@ -87,7 +87,7 @@ public final class PreferenceConstraints {
     static Constraint weeklyPlanningTimeOffTarget(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(TeacherSlot.class)
                 .filter(teacherSlot -> SlotActivities.isOnDuty(teacherSlot.getActivity()))
-                .groupBy(TeacherSlot::getTeacher, teacherSlot -> IsoWeek.of(teacherSlot.getSlot().date()),
+                .groupBy(TeacherSlot::getTeacher, teacherSlot -> IsoWeek.of(teacherSlot.date()),
                         ConstraintCollectors.toList(TeacherSlot::getActivity))
                 .filter((teacher, week, activities) -> planningMinutes(activities) != WEEKLY_PLANNING_TIME_TARGET_MINUTES)
                 .penalize(HardSoftScore.ONE_SOFT,
@@ -111,7 +111,7 @@ public final class PreferenceConstraints {
     static Constraint weeklyOnDutyBelowTarget(ConstraintFactory constraintFactory) {
         return constraintFactory.forEach(TeacherSlot.class)
                 .filter(teacherSlot -> SlotActivities.isOnDuty(teacherSlot.getActivity()))
-                .groupBy(TeacherSlot::getTeacher, teacherSlot -> IsoWeek.of(teacherSlot.getSlot().date()),
+                .groupBy(TeacherSlot::getTeacher, teacherSlot -> IsoWeek.of(teacherSlot.date()),
                         ConstraintCollectors.toList(TeacherSlot::getActivity))
                 .filter((teacher, week, activities) -> workingMinutes(activities) < teacher.hoursPerWeek() * MINUTES_PER_HOUR)
                 .penalize(HardSoftScore.ONE_SOFT,
